@@ -22,6 +22,10 @@ flag emacs
   description: Build emacs-specific parts
   default: True
 
+flag server
+  description: scion server serving different clients
+  default: True
+
 flag examples
   description: Build examples
   default: False
@@ -104,6 +108,7 @@ executable test_thing_at_point
     build-depends: QuickCheck == 2.*
     cpp-options:   -DDEBUG
 
+-- This executable will be replaced by scion_server which can serve different client types (vim, emacs, eclipse ?)
 executable scion_emacs
   main-is: EmacsServer.hs
   hs-source-dirs: programs src
@@ -113,6 +118,20 @@ executable scion_emacs
   if flag(testing)
     build-depends: QuickCheck == 2.*
     cpp-options:   -DDEBUG
+  if impl(ghc > 6.11)
+    cpp-options:   -DHAVE_PACKAGE_DB_MODULES
+
+  -- TODO: drop after 6.10.2 is out
+  if impl(ghc >= 6.11.20081113) || impl(ghc == 6.10.* && >= 6.10.2)
+    cpp-options:   -DRECOMPILE_BUG_FIXED
+
+executable scion_server
+  main-is: ScionServer.hs
+  hs-source-dirs: src src-scion-server
+  if !flag(server)
+    buildable: False
+  build-depends: hslogger, mtl, parsec, time
+
   if impl(ghc > 6.11)
     cpp-options:   -DHAVE_PACKAGE_DB_MODULES
 
