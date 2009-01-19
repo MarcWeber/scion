@@ -44,6 +44,13 @@ import Distribution.Simple.PreProcess ( knownSuffixHandlers )
 import qualified Distribution.Verbosity as V
 import qualified Distribution.PackageDescription as PD
 
+import qualified System.Log.Logger as HL
+
+log_ :: HL.Priority -> String -> IO ()
+log_ a b = HL.logM __FILE__ a b
+logInfo :: String -> IO ()
+logInfo = log_ HL.INFO
+
 ------------------------------------------------------------------------------
 
 -- TODO: have some kind of project description file, that allows us to
@@ -345,13 +352,13 @@ addCmdLineFlags flags = do
   res <- gtry $ parseDynamicFlags dflags (map noLoc flags)
   case res of
     Left (UsageError msg) -> do
-      liftIO $ putStrLn $ "Dynflags parse error: " ++ msg
+      liftIO $ logError $ "Dynflags parse error: " ++ msg
       return []
     Left e -> liftIO $ throwIO e
     Right (dflags', unknown, warnings) -> do
       unless (null unknown) $
-        liftIO $ putStrLn $ "Unrecognised flags:\n" ++ show (map unLoc unknown)
-      liftIO $ mapM_ putStrLn $ map unLoc warnings
+        liftIO $ logError $ "Unrecognised flags:\n" ++ show (map unLoc unknown)
+      liftIO $ mapM_ logError $ map unLoc warnings
       setSessionDynFlags dflags'
 
 -- | Return the (configured) package description of the current Cabal project.

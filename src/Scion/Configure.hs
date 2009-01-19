@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveDataTypeable, ScopedTypeVariables #-}
+{-# LANGUAGE DeriveDataTypeable, ScopedTypeVariables, CPP #-}
 -- |
 -- Module      : Scion.Configure
 -- Copyright   : (c) Thomas Schilling 2008
@@ -23,6 +23,14 @@ import System.Directory
 import System.FilePath
 import Control.Monad
 
+
+import qualified System.Log.Logger as HL
+
+log_ :: HL.Priority -> String -> IO ()
+log_ a b = HL.logM __FILE__ a b
+logInfo :: String -> IO ()
+logInfo = log_ HL.INFO
+
 ------------------------------------------------------------------------------
 
 configureCabalProject :: FilePath -> FilePath -> [String] -> ScionM ()
@@ -37,7 +45,7 @@ configureCabalProject root_dir dist_dir extra_args =
                 , "--with-compiler=" ++ ghc
                 , "--with-hc-pkg=" ++ ghc_pkg
                 ] ++ extra_args
-     liftIO $ print args
+     liftIO $ logInfo $ "args : " ++ show args
      setWorkingDir root_dir
      ok <- cabalSetupWithArgs cabal_file args
      if ok then openCabalProject root_dir dist_dir'

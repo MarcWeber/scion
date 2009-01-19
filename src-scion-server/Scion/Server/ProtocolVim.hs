@@ -32,7 +32,6 @@ import Control.Monad (forever, liftM)
 import Control.Exception.Base (Exception)
 import Control.Monad.Trans (lift)
 import qualified Control.Exception as E 
-import Prelude hiding (log)
 import qualified System.Log.Logger as HL
 
 import qualified Data.ByteString.Char8 as S
@@ -65,10 +64,10 @@ import Text.ParserCombinators.Parsec.Char
 
 import Text.ParserCombinators.ReadP (skipSpaces)
 
-log = HL.logM __FILE__
-logInfo = log HL.INFO
-logError = log HL.ERROR
-logDebug = log HL.DEBUG
+log_ = HL.logM __FILE__
+logInfo = log_ HL.INFO
+logError = log_ HL.ERROR
+logDebug = log_ HL.DEBUG
 
 data VimCommand = VimCommand String (M.Map VimType VimType -> ScionM VimType)
 

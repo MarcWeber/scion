@@ -33,6 +33,13 @@ import Data.Typeable
 import Control.Exception
 import Control.Applicative
 
+import qualified System.Log.Logger as HL
+
+log_ :: HL.Priority -> String -> IO ()
+log_ a b = HL.logM __FILE__ a b
+logInfo :: String -> IO ()
+logInfo = log_ HL.INFO
+
 ------------------------------------------------------------------------------
 -- * The Scion Monad and Session State
 
@@ -144,7 +151,7 @@ deafening = Deafening
 message :: Verbosity -> String -> ScionM ()
 message v s = do
   v0 <- gets scionVerbosity
-  when (v0 >= v) $ liftIO $ putStrLn s
+  when (v0 >= v) $ liftIO $ logInfo s
 
 -- | Reflect a computation in the 'ScionM' monad into the 'IO' monad.
 reflectScionM :: ScionM a -> (IORef SessionState, Session) -> IO a
