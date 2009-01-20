@@ -11,7 +11,37 @@
 --
 -- Utilities to manipulate the session state.
 --
-module Scion.Session where
+module Scion.Session 
+  ( CannotOpenCabalProject(..)
+  , NoCurrentCabalProject(..)
+  , ComponentDoesNotExist(..)
+  , initialScionDynFlags
+  , resetSessionState
+  , setWorkingDir
+  , openCabalProject
+  , preprocessPackage
+  , getLocalBuildInfo
+  , noLibError
+  , projectRootDir
+  , setDynFlagsFromCabal
+  , setTargetsFromCabal
+  , loadComponent
+  , setActiveComponent
+  , load
+  , unload
+  , addCmdLineFlags
+  , currentCabalPackage
+  , availableComponents
+  , setGHCVerbosity
+  , backgroundTypecheckFile
+  , isRelativeToProjectRoot
+  , filePathToProjectModule
+  , isPartOfProject
+  , setContextForBGTC
+  , modSummaryForFile
+  , removeMessagesForFile
+
+  ) where
 
 import Prelude hiding ( mod )
 import GHC hiding ( flags, load )
@@ -48,8 +78,10 @@ import qualified System.Log.Logger as HL
 
 log_ :: HL.Priority -> String -> IO ()
 log_ a b = HL.logM __FILE__ a b
-logInfo :: String -> IO ()
-logInfo = log_ HL.INFO
+-- logInfo :: String -> IO ()
+-- logInfo = log_ HL.INFO
+logError :: String -> IO ()
+logError = log_ HL.ERROR
 
 ------------------------------------------------------------------------------
 

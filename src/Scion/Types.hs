@@ -1,4 +1,4 @@
-{-# LANGUAGE PatternGuards #-}
+{-# LANGUAGE PatternGuards, CPP #-}
 {-# LANGUAGE ExistentialQuantification, DeriveDataTypeable #-}
 -- |
 -- Module      : Scion.Types
@@ -12,8 +12,31 @@
 -- Types used throughout Scion. 
 --
 module Scion.Types 
-  ( module Scion.Types
-  , liftIO, MonadIO
+  ( modifySessionState
+  , getSessionState
+  , gets
+  , SessionState(..)
+  , mkSessionState
+  , ScionM(..)
+  , liftScionM
+  , setSessionState
+  , Verbosity(..)
+  , silent
+  , normal
+  , verbose
+  , deafening
+  , message
+  , reflectScionM
+  , reifyScionM
+  , BgTcCache(..)
+  , CompilationResult(..)
+  , SomeScionException
+  , scionToException
+  , scionFromException
+  , dieHard
+  , CabalComponent(..)
+
+  , liftIO, MonadIO -- from MonadUtils 
   ) where
 
 import Scion.Types.ExtraInstances()

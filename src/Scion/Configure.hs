@@ -68,7 +68,7 @@ cabalSetupWithArgs cabal_file args =
     ensureCabalFileExists
     let dir = dropFileName cabal_file
     setup <- findSetup dir
-    liftIO $ putStrLn $ "Using setup file: " ++ setup
+    liftIO $ logInfo $ "Using setup file: " ++ setup
     _mainfun <- compileMain setup
     
     return True
@@ -93,7 +93,7 @@ cabalSetupWithArgs cabal_file args =
                                 }
 
       t <- guessTarget file Nothing
-      liftIO $ putStrLn $ "target: " ++ (showSDoc $ ppr t)
+      liftIO $ logInfo $ "target: " ++ (showSDoc $ ppr t)
       setTargets [t]
       load LoadAllTargets
       m <- findModule (mkModuleName "Main") Nothing
