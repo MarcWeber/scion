@@ -69,6 +69,8 @@ library
 
   if impl(ghc == 6.10.*)
     cpp-options:   -DWPINLINE
+  if impl(ghc == 6.11.*)
+    cpp-options:   -DWPINLINE
 
   if flag(emacs)
     exposed-modules: Scion.Server.Emacs,
