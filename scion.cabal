@@ -30,6 +30,10 @@ flag examples
   description: Build examples
   default: False
 
+flag test_various
+  description: Build executable doing some self-tests
+  default: True
+
 library
   build-depends:   ghc          >= 6.10 && < 6.12,
                    ghc-paths    == 0.1.*,
@@ -134,6 +138,20 @@ executable scion_server
   if !flag(server)
     buildable: False
   build-depends: hslogger, mtl, parsec, time
+
+  if impl(ghc > 6.11)
+    cpp-options:   -DHAVE_PACKAGE_DB_MODULES
+
+  -- TODO: drop after 6.10.2 is out
+  if impl(ghc >= 6.11.20081113) || impl(ghc == 6.10.* && >= 6.10.2)
+    cpp-options:   -DRECOMPILE_BUG_FIXED
+
+executable test_various
+  main-is: TestVarious.hs
+  hs-source-dirs: src tests
+  if !flag(test_various)
+    buildable: False
+  build-depends: hslogger, mtl, parsec, time, HUnit
 
   if impl(ghc > 6.11)
     cpp-options:   -DHAVE_PACKAGE_DB_MODULES

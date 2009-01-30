@@ -37,6 +37,19 @@ working on Scion itself.
 Usage
 =====
 
+
+Configuration
+-------------
+Put something like this into a file .scion-config.sh:
+
+  CABAL_SETUP="./setup configure"
+  $CABAL_SETUP --builddir=distScionFooNoBar --flags="+foo -bar"
+  $CABAL_SETUP --builddir=distScionNoFooBar --flags="-foo +bar"
+
+You already have guessed it: It's /bin/sh syntax.
+This way you can use this as script without scion as well.
+scionFooNoBar, scionNoFooBar are the ids the configurations
+
 TODO
 
 Emacs
