@@ -37,6 +37,10 @@ module Scion.Types
   , CabalComponent(..)
 
   , liftIO, MonadIO -- from MonadUtils 
+
+  , CabalConfiguration(..)
+  , DaemonConnectionInfo(..)
+  , ProjectInfo(..)
   ) where
 
 import Scion.Types.ExtraInstances()
@@ -48,11 +52,13 @@ import MonadUtils ( liftIO, MonadIO )
 import Exception
 
 import Distribution.Simple.LocalBuildInfo
+import qualified Distribution.PackageDescription as PD
 import Control.Monad ( when )
 import Data.IORef
 import Data.Monoid
 import Data.Time.Clock  ( NominalDiffTime )
 import Data.Typeable
+import qualified Data.Map as M
 import Control.Exception
 import Control.Applicative
 
@@ -247,3 +253,22 @@ data CabalComponent = Library | Executable String deriving (Eq, Show, Typeable)
 -- | Shorthand for 'undefined'.
 __ :: a
 __ = undefined
+
+
+-- identifies a cabal project
+type CabalProject = FilePath -- canonicalized FilePath pointing to the top directory
+
+-- see markdown
+data CabalConfiguration = CabalConfiguration String
+
+data DaemonConnectionInfo = DaemonConnectionInfo
+  { defaults :: M.Map CabalProject (CabalConfiguration, CabalComponent)
+  , cabalPackageDescriptions :: M.Map (CabalProject, CabalConfiguration) PD.PackageDescription
+  , fileProject :: M.Map
+                    FilePath -- canonicalized path (which the user is editing)
+                    ProjectInfo
+  }
+
+data ProjectInfo =
+  PICabal CabalProject -- path to the cabal project
+  | PISingleFile [String] -- compilation options

@@ -24,6 +24,9 @@ flag emacs
 
 flag server
   description: scion server serving different clients
+flag server-daemon
+  description: scion server2 daemon supporting multiple connections launching
+                scion instances automatically
   default: True
 
 flag examples
@@ -145,6 +148,22 @@ executable scion_server
   -- TODO: drop after 6.10.2 is out
   if impl(ghc >= 6.11.20081113) || impl(ghc == 6.10.* && >= 6.10.2)
     cpp-options:   -DRECOMPILE_BUG_FIXED
+
+
+executable scion_daemon
+  main-is: ScionDaemon.hs
+  hs-source-dirs: src src-scion-daemon
+  if !flag(server-daemon)
+    buildable: False
+  build-depends: hslogger, mtl, parsec, time
+
+  if impl(ghc > 6.11)
+    cpp-options:   -DHAVE_PACKAGE_DB_MODULES
+
+  -- TODO: drop after 6.10.2 is out
+  if impl(ghc >= 6.11.20081113) || impl(ghc == 6.10.* && >= 6.10.2)
+    cpp-options:   -DRECOMPILE_BUG_FIXED
+
 
 executable test_various
   main-is: TestVarious.hs
