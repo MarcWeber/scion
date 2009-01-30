@@ -1,6 +1,9 @@
 From: Marc Weber <marco-oweber@gmx.de>
 Subject: [PATCH] server_and_instances
 
-<patch description>
+This patch rewrites parts of scion. goals:
+a) Only have one scion server launching multiple scion serving instances itself.
+b) build files within the cabal directory so that we can make use of the cabal
+   preprocessing..
 
 Signed-off-by: Marc Weber <marco-oweber@gmx.de>
