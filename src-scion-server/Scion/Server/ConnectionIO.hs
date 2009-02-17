@@ -12,7 +12,7 @@
 
 module Scion.Server.ConnectionIO (
   ConnectionIO(..)
-)where
+) where
 import Control.Exception (throw, IOException, Exception)
 -- import System.IO.Error (mkIOError, IOErrorType(..) )
 import Prelude hiding (log)

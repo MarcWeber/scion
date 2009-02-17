@@ -39,8 +39,7 @@ module Scion.Types
   , liftIO, MonadIO -- from MonadUtils 
 
   , CabalConfiguration(..)
-  , DaemonConnectionInfo(..)
-  , ProjectInfo(..)
+  , CabalProject
   ) where
 
 import Scion.Types.ExtraInstances()
@@ -52,13 +51,11 @@ import MonadUtils ( liftIO, MonadIO )
 import Exception
 
 import Distribution.Simple.LocalBuildInfo
-import qualified Distribution.PackageDescription as PD
 import Control.Monad ( when )
 import Data.IORef
 import Data.Monoid
 import Data.Time.Clock  ( NominalDiffTime )
 import Data.Typeable
-import qualified Data.Map as M
 import Control.Exception
 import Control.Applicative
 
@@ -203,6 +200,7 @@ data CompilationResult = CompilationResult {
       compilationErrors    :: ErrorMessages,
       compilationTime      :: NominalDiffTime
     }
+    deriving (Show, Read)
 
 instance Monoid CompilationResult where
   mempty = CompilationResult True mempty mempty 0
@@ -248,27 +246,14 @@ dieHard last_wish = do
 ------------------------------------------------------------------------------
 -- * Others \/ Helpers
 
-data CabalComponent = Library | Executable String deriving (Eq, Show, Typeable)
+data CabalComponent = Library | Executable String deriving (Eq, Show, Read, Typeable)
 
 -- | Shorthand for 'undefined'.
 __ :: a
 __ = undefined
 
-
 -- identifies a cabal project
 type CabalProject = FilePath -- canonicalized FilePath pointing to the top directory
 
--- see markdown
+-- identifies a cabal project configuration. See markdown (-> Configuration)
 data CabalConfiguration = CabalConfiguration String
-
-data DaemonConnectionInfo = DaemonConnectionInfo
-  { defaults :: M.Map CabalProject (CabalConfiguration, CabalComponent)
-  , cabalPackageDescriptions :: M.Map (CabalProject, CabalConfiguration) PD.PackageDescription
-  , fileProject :: M.Map
-                    FilePath -- canonicalized path (which the user is editing)
-                    ProjectInfo
-  }
-
-data ProjectInfo =
-  PICabal CabalProject -- path to the cabal project
-  | PISingleFile [String] -- compilation options

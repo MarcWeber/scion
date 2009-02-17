@@ -22,6 +22,7 @@ import Outputable
 
 import Control.Monad
 import Data.Maybe ( fromMaybe )
+import Data.List ( isPrefixOf, tails )
 
 import Data.Char (isLower, isUpper)
 
@@ -68,3 +69,7 @@ camelCaseMatch (c:cs) (i:is)
 camelCaseMatch [] [] = True
 camelCaseMatch [] _ = False
 camelCaseMatch _ [] = False
+
+-- check performance? 
+contained :: (Eq a) => [a] -> [a] -> Bool
+contained list inList = any (list `isPrefixOf`) $ tails inList
