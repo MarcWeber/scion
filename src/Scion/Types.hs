@@ -1,4 +1,4 @@
-{-# LANGUAGE PatternGuards, CPP #-}
+{-# LANGUAGE PatternGuards, CPP, StandaloneDeriving, TypeSynonymInstances #-}
 {-# LANGUAGE ExistentialQuantification, DeriveDataTypeable #-}
 -- |
 -- Module      : Scion.Types
@@ -45,7 +45,7 @@ module Scion.Types
 import Scion.Types.ExtraInstances()
 
 import GHC
-import ErrUtils ( WarningMessages, ErrorMessages )
+import ErrUtils ( WarningMessages, ErrorMessages, ErrMsg(..), WarnMsg(..) )
 import HscTypes
 import MonadUtils ( liftIO, MonadIO )
 import Exception
@@ -194,10 +194,12 @@ data BgTcCache
   = Parsed ParsedModule
   | Typechecked TypecheckedModule
 
+deriving instance Show ErrMsg
+deriving instance Read ErrMsg
 data CompilationResult = CompilationResult { 
       compilationSucceeded :: Bool,
-      compilationWarnings  :: WarningMessages,
-      compilationErrors    :: ErrorMessages,
+      compilationWarnings  :: [WarnMsg], -- can't derive serialization for WarningMessages = Bag WarnMsg
+      compilationErrors    :: [ErrMsg], -- can't deriving serialization for ErrorMessages = Bag
       compilationTime      :: NominalDiffTime
     }
     deriving (Show, Read)
