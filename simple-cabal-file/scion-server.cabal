@@ -16,8 +16,7 @@ extra-source-files: README.markdown ../emacs/scion.el
 executable scion_server
   main-is: Main.hs
 
-  -- copy paste from ../server/scion-server.cabal and ../lib/scion.cabal
-  -- but without scion lib dependency
+  -- !! also update ../server/scion-server.cabal and ../lib/scion.cabal
   build-depends: base         == 4.*,
                  network      >= 2.1 && < 2.3,
                  network-bytestring == 0.1.*,
