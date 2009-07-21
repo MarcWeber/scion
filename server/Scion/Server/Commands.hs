@@ -284,10 +284,10 @@ cmdConfigureCabalProject =
   Cmd "configure-cabal-project" $
     reqArg' "root-dir" fromJSString <&>
     optArg' "dist-dir" ".dist-scion" fromJSString <&>
-    optArg' "extra-args" "" fromJSString $ cmd
+    optArg' "extra-args" [] (map fromJSString) $ cmd
   where
     cmd path rel_dist extra_args = do
-        configureCabalProject path rel_dist (words extra_args)
+        configureCabalProject path rel_dist extra_args
         preprocessPackage rel_dist
         (toJSString . display . PD.package) `fmap` currentCabalPackage
 
