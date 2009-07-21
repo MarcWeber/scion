@@ -272,10 +272,10 @@ cmdOpenCabalProject =
   Cmd "open-cabal-project" $
     reqArg' "root-dir" fromJSString <&>
     optArg' "dist-dir" ".dist-scion" fromJSString <&>
-    optArg' "extra-args" "" fromJSString $ worker
+    optArg' "extra-args" [] (map fromJSString) $ worker
  where
    worker root_dir dist_dir extra_args = do
-        openOrConfigureCabalProject root_dir dist_dir (words extra_args)
+        openOrConfigureCabalProject root_dir dist_dir extra_args
         preprocessPackage dist_dir
         (toJSString . display . PD.package) `fmap` currentCabalPackage
 
