@@ -59,16 +59,6 @@ import Packages ( pkgIdMap )
 import Distribution.InstalledPackageInfo
 #endif
 
-------------------------------------------------------------------------
-
-lookupKey :: JSON a => JSObject JSValue -> String -> Result a
-lookupKey = flip valFromObj
-
-makeObject :: [(String, JSValue)] -> JSValue
-makeObject = makeObj
-
-------------------------------------------------------------------------------
-
 type KeepGoing = Bool
 
 -- a scion request is JS object with 3 keys:
@@ -300,7 +290,7 @@ cmdConfigureCabalProject =
 
 instance JSON Component where
   readJSON (JSObject obj)
-    | Ok JSNull <- lookupKey obj "library" = return Library
+    | Ok (JSString "") <- lookupKey obj "library" = return Library
     | Ok s <- lookupKey obj "executable" =
         return $ Executable (fromJSString s)
     | Ok s <- lookupKey obj "file" =
@@ -444,8 +434,10 @@ instance JSON CabalConfiguration where
 -- in the future you may write a config file describing the most common configuration settings
 cmdListCabalConfigurations :: Cmd
 cmdListCabalConfigurations =
-    Cmd "list-cabal-configurations" $ reqArg' "cabal-file" fromJSString $ cmd
-  where cmd cabal_file = cabalConfigurations cabal_file
+    Cmd "list-cabal-configurations" $
+      reqArg' "cabal-file" fromJSString <&>
+      optArg' "all" "type" $ cmd
+  where cmd cabal_file type' = cabalConfigurations cabal_file type'
 
 allExposedModules :: ScionM [ModuleName]
 #ifdef HAVE_PACKAGE_DB_MODULES

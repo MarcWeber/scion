@@ -46,7 +46,7 @@ $(DIST_LIB)/build/libHSscion-0.1.a: $(SETUP) $(DIST_LIB)/setup-config lib/**/*.h
 
 $(DIST_LIB)/.installed_tag: $(DIST_LIB)/build/libHSscion-0.1.a $(SETUP)
 	@echo === Installing scion ===
-	@cd lib && ../$(SETUP) install --user --builddir=../$(DIST_LIB)
+	@cd lib && ../$(SETUP) install --user --builddir=../$(DIST_LIB) -v3
 	@touch $@
 
 $(DIST_SERVER)/build/scion_server/scion_server: $(SETUP) $(DIST_SERVER)/setup-config server/Main.hs server/Scion/Server/*.hs server/Scion/Server/**/*.hs
@@ -55,9 +55,9 @@ $(DIST_SERVER)/build/scion_server/scion_server: $(SETUP) $(DIST_SERVER)/setup-co
         ../$(SETUP) build --builddir=../$(DIST_SERVER)
 
 $(SETUP): Setup.hs
-	@echo === Building Setup ===
-	@mkdir -p $(SETUP_DIST)
-	@$(HC) --make -odir $(SETUP_DIST) -hidir $(SETUP_DIST) -o $@ $<
+	echo === Building Setup ===
+	mkdir -p $(SETUP_DIST)
+	$(HC) --make -odir $(SETUP_DIST) -hidir $(SETUP_DIST) -o $@ $<
 
 setup: $(SETUP)
 

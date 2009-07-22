@@ -30,7 +30,7 @@ handle con 0 = do
    loop = do
      -- TODO: don't require line-based input
      str <- liftIO $ CIO.getLine con
-     logDebug $ "parsing command: " ++ show str
+     logDebug $ "parsing command: |" ++ show str ++ "|"
      let mb_req = decodeStrict (S.toString str)
      (resp, keep_going) 
          <- case mb_req of
@@ -50,3 +50,4 @@ handle con unknownVersion = do
     S.pack $ "failure: Don't know how to talk to client version "
       ++ (show unknownVersion)
   return False
+

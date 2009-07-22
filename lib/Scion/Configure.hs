@@ -8,7 +8,12 @@
 -- Stability   : experimental
 -- Portability : portable
 --
-module Scion.Configure where
+module Scion.Configure (
+  openOrConfigureCabalProject,
+  configureCabalProject,
+  ConfigException(..),
+  cabalSetupWithArgs
+) where
 
 import Scion.Types
 import Scion.Session
@@ -25,6 +30,13 @@ import System.FilePath
 import System.IO ( openTempFile, hPutStr, hClose )
 import Control.Monad
 import Control.Exception ( IOException )
+
+import qualified System.Log.Logger as HL
+
+log' :: HL.Priority -> String -> IO ()
+log' = HL.logM "Configure.hs"
+logInfo = log' HL.INFO
+logDebug = log' HL.DEBUG
 
 ------------------------------------------------------------------------------
 
@@ -68,7 +80,9 @@ configureCabalProject ::
   -> [String] -- ^ command line arguments to "configure".
   -> ScionM ()
 configureCabalProject root_dir dist_dir extra_args = do
+   liftIO $ logInfo "configureCabalProject start"
    cabal_file <- find_cabal_file
+   liftIO $ logInfo $ "cabal file " ++ cabal_file
    let args = [ "configure"
               , "-v3"
               , "--user"
@@ -76,9 +90,12 @@ configureCabalProject root_dir dist_dir extra_args = do
               , "--with-compiler=" ++ ghc
               , "--with-hc-pkg=" ++ ghc_pkg
               ] ++ extra_args
+   liftIO $ logInfo $ "args " ++ (show args)
    liftIO $ print args
+   liftIO $ logInfo $ "working dir " ++ root_dir
    setWorkingDir root_dir
    ok <- cabalSetupWithArgs cabal_file args
+   liftIO $ logInfo $ "result " ++ (show ok)
    if ok then openCabalProject root_dir dist_dir
          else liftIO $ throwIO $ 
                 CannotOpenCabalProject "Failed to configure"
@@ -109,13 +126,18 @@ cabalSetupWithArgs ::
   -> ScionM Bool
 cabalSetupWithArgs cabal_file args =
    ghandle (\(_ :: ConfigException) -> return False) $ do
+    liftIO $ logInfo "1"
     ensureCabalFileExists
+    liftIO $ logInfo "2"
     let dir = dropFileName cabal_file
+    liftIO $ logInfo "3"
     (setup, delete_when_done) <- findSetup dir
     liftIO $ putStrLn $ "Using setup file: " ++ setup
     _mainfun <- compileMain setup
+    liftIO $ putStrLn $ "5"
     when (delete_when_done) $
       liftIO (removeFile setup)
+    liftIO $ putStrLn $ "6"
     return True
   where
     ensureCabalFileExists = do
@@ -142,7 +164,9 @@ cabalSetupWithArgs cabal_file args =
        "main = defaultMain"]
 
     compileMain file = do
+      liftIO $ logInfo $ "compileMain " ++ file
       resetSessionState
+      liftIO $ logInfo $ "after reset session state"
 
       dflags <- getSessionDynFlags
       setSessionDynFlags $
@@ -153,13 +177,18 @@ cabalSetupWithArgs cabal_file args =
 
       t <- guessTarget file Nothing
       liftIO $ putStrLn $ "target: " ++ (showSDoc $ ppr t)
+      liftIO $ logInfo $ " guessTarget"
       setTargets [t]
       load LoadAllTargets
       m <- findModule (mkModuleName "Main") Nothing
+      liftIO $ logInfo $ "m"
       env <- findModule (mkModuleName "System.Environment") Nothing
+      liftIO $ logInfo $ " env"
       GHC.setContext [m] [env]
+      liftIO $ logInfo $ " mainfun"
       mainfun <- runStmt ("System.Environment.withArgs "
                                 ++ show args
                                 ++ "(main)")
                          RunToCompletion
+      liftIO $ logInfo $ "br"
       return mainfun

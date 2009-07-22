@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# OPTIONS_GHC -fno-warn-orphans -XPatternGuards -XScopedTypeVariables #-}
 -- |
 -- Module      : Scion.Utils
 -- Copyright   : (c) Thomas Schilling 2008
@@ -24,6 +24,14 @@ import Control.Monad
 import Data.Maybe ( fromMaybe )
 
 import Data.Char (isLower, isUpper)
+
+import Text.JSON
+
+import Data.Foldable (foldlM)
+
+import System.FilePath
+
+import System.Directory (doesFileExist)
 
 thingsAroundPoint :: (Int, Int) -> [Located n] -> [Located n]
 thingsAroundPoint pt ls = [ l | l <- ls, spans (getLoc l) pt ]
@@ -58,6 +66,19 @@ ifM cm tm em = do
   c <- cm
   if c then tm else em
 
+
+------------------------------------------------------------------------
+-- JSON helper functions
+
+lookupKey :: JSON a => JSObject JSValue -> String -> Result a
+lookupKey = flip valFromObj
+
+makeObject :: [(String, JSValue)] -> JSValue
+makeObject = makeObj
+
+------------------------------------------------------------------------------
+
+
 -- an alternative to the broken Fuzzy module
 -- match sH simpleHTTP
 -- match siH simpleHTTP
@@ -73,3 +94,37 @@ camelCaseMatch (c:cs) (i:is)
 camelCaseMatch [] [] = True
 camelCaseMatch [] _ = False
 camelCaseMatch _ [] = False
+
+
+instance JSON CabalConfiguration where
+  readJSON (JSObject obj)
+    | Ok "bulid-configuration" <- lookupKey obj "type"
+    , Ok distDir' <- lookupKey obj "type"
+    , Ok args <- lookupKey obj "extra-args"
+    , Ok args2        <- readJSONs args
+    = return $ CabalConfiguration distDir' args2
+  readJSON _ = fail "CabalConfiguration"
+  showJSON _ = error "TODO showJSON CabalConfiguration"
+
+projectConfigFromCabalFile :: FilePath -> ScionM ScionProjectConfig
+projectConfigFromCabalFile = parseScionProjectConfig . (</> ".scion-config") . takeDirectory
+
+-- TODO ensure file handle is closed! 
+parseScionProjectConfig :: FilePath -> ScionM ScionProjectConfig
+parseScionProjectConfig path = do
+    de <- liftIO $ doesFileExist path
+    if de
+      then do
+        (lines' :: [String] ) <- liftIO $ liftM lines $ readFile path
+        jsonParsed <- mapM parseLine lines'
+        foldlM parseJSON emptyScionProjectConfig jsonParsed
+      else return emptyScionProjectConfig
+  where 
+    parseLine :: String -> ScionM JSValue    
+    parseLine l = case decodeStrict l of
+      Ok r -> return r
+      Error msg -> fail $  "error parsing configuration line" ++ l ++ " error : " ++ msg
+    parseJSON :: ScionProjectConfig -> JSValue -> ScionM ScionProjectConfig
+    parseJSON pc json = case readJSON json of
+      Ok bc -> return $ pc { buildConfigurations = bc : buildConfigurations pc }
+      Error msg -> fail $ "invalid JSON object " ++ (show json) ++ " error :" ++ msg

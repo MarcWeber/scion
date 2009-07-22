@@ -133,4 +133,3 @@ mkHeader :: Int -> String
 mkHeader len = reverse . take 6 $ reverse (showHex len "") ++ repeat '0'
 
 log :: MonadIO m => Int -> String -> m ()
-log lvl s = when (lvl <= logLevel) $ liftIO $ putStrLn s

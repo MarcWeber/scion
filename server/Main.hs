@@ -48,6 +48,7 @@ import qualified Control.Exception as E
 import Control.Monad ( when, forever, liftM )
 import System.Console.GetOpt
 
+import qualified System.Log.Logger as HL
 
 log = HL.logM __FILE__
 logInfo = log HL.INFO

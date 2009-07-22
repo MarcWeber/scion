@@ -27,7 +27,7 @@ import qualified Data.MultiSet as MS
 import Control.Monad
 import Data.Data
 import Data.IORef
-import Data.List        ( intercalate )
+import Data.List        ( intercalate, nubBy )
 import Data.Maybe       ( isJust )
 import Data.Monoid
 import Data.Time.Clock  ( getCurrentTime, diffUTCTime )
@@ -206,12 +206,23 @@ cabalProjectComponents cabal_file = do
        [ Executable (PD.exeName e) | e <- PD.executables pd ]
 
 
+-- returns a list of cabal configurations
+-- dist: those who have been configured */setup-config 
+-- config: those from the .scion-config project configuration file
+-- all: both
+-- uniq: both, but prefer config items
 cabalConfigurations :: FilePath -- ^ The .cabal file
-                            -> ScionM [CabalConfiguration]
-cabalConfigurations cabal = liftIO $ do
+                       -> String -- ^ one of "dist" "config" "all"
+                       -> ScionM [CabalConfiguration]
+cabalConfigurations cabal type' = do
   let dir = takeDirectory cabal
-  list <- filterM (doesFileExist . (</> "setup-config")) =<< getDirectoryContents dir
-  return $ map CabalConfiguration list
+  existingDists <- liftIO $ filterM (doesFileExist . (</> "setup-config")) =<< getDirectoryContents dir
+  config <- projectConfigFromCabalFile cabal
+  let list = (if type' `elem` ["all", "config", "uniq"] then (buildConfigurations config) else [])
+          -- TODO read flags from setup-config files 
+          ++ (if type' `elem` ["all", "dists",  "uniq"] then map (\ a-> CabalConfiguration a []) existingDists else [])
+  let f = if type' == "uniq" then nubBy (\a b -> distDir a == distDir b) else id
+  return $ f list
 
 -- | Run the steps that Cabal would call before building.
 --

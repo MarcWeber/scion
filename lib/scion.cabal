@@ -28,7 +28,9 @@ library
                    uniplate     == 1.2.*,
                    time         == 1.1.*,
                    filepath     == 1.1.*,
-                   multiset     == 0.1.*
+                   multiset     == 0.1.*,
+                   hslogger     == 1.0.*,
+                   json         == 0.4.*
   hs-source-dirs:  .
   extensions:      CPP, PatternGuards
   exposed-modules:

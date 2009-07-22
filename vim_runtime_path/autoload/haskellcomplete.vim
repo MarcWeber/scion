@@ -24,15 +24,19 @@ if !has('python') | call s:Log(0, "Error: scion requires vim compiled with +pyth
 let g:vim_scion_protocol_version = "0"
 
 fun! haskellcomplete#LoadComponent(component)
-  let result = haskellcomplete#EvalScion(1,'load-component', { 'component' : a:component})
+  let result = haskellcomplete#EvalScion(0,'load-component', { 'component' : a:component})
   if has_key(result,'error')
+    " if no cabal project was selected (dist-dir) do that now
     if result['error']['message'] == "NoCurrentCabalProject"
-      let cabal_project = haskellcomplete#CabalProject()
-
+      let cabal_configuration = haskellcomplete#CabalConfiguration()
+      haskellcomplete#EvalScion(1,'load-component', { 'component' : a:component})
     else
       throw "can't handle this failure: ".string(result['error'])
     endif
+  else
+    let result = result['result']
   endif
+  return result
 endf
 
 " if there is item take it, if there are more than one ask user which one to
