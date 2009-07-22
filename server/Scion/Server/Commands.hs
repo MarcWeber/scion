@@ -153,8 +153,8 @@ allCommands =
     , cmdListSupportedLanguages
     , cmdListSupportedPragmas
     , cmdListSupportedFlags
-    , cmdListCabalComponents
     , cmdListCabalConfigurations
+        -- , cmdListCabalComponents --  <<<<<<<<<<<<<< 
     , cmdListRdrNamesInScope
     , cmdListExposedModules
     , cmdCurrentComponent
@@ -290,7 +290,7 @@ cmdConfigureCabalProject =
 
 instance JSON Component where
   readJSON (JSObject obj)
-    | Ok (JSString "") <- lookupKey obj "library" = return Library
+    | Ok (JSString _) <- lookupKey obj "library" = return Library
     | Ok s <- lookupKey obj "executable" =
         return $ Executable (fromJSString s)
     | Ok s <- lookupKey obj "file" =
@@ -436,7 +436,7 @@ cmdListCabalConfigurations :: Cmd
 cmdListCabalConfigurations =
     Cmd "list-cabal-configurations" $
       reqArg' "cabal-file" fromJSString <&>
-      optArg' "all" "type" $ cmd
+      optArg' "type" "all" fromJSString $ cmd
   where cmd cabal_file type' = cabalConfigurations cabal_file type'
 
 allExposedModules :: ScionM [ModuleName]
@@ -561,3 +561,5 @@ cmdNameDefinitions =
           db <- gets defSiteDB
           let locs = map fst $ lookupDefSite db nm
           return locs
+
+
