@@ -32,70 +32,98 @@ endfun
 fun! s:BackgroundTypecheckFile(...)
   " no file given defaults to current buffer
   let file = a:0 > 0 ? a:1 : expand('%:p')
-  let r =  haskellcomplete#EvalScion({'request' : 'cmdBackgroundTypecheckFile', 'file' : file})
+  let r =  haskellcomplete#EvalScion(1,{'method' : 'cmdBackgroundTypecheckFile', 'file' : file})
   echo ScionResultToErrorList('file check', 'setqflist', r)
 endf
 
-fun! s:OpenCabalProject(...)
-  let builddir = a:0 > 0 ? a:1 : "dist"
-  echo haskellcomplete#EvalScion(
-    \ {'request' : 'cmdOpenCabalProject', 'root_dir' : getcwd(),
-    \ 'dist_dir' : builddir, 'extra_args' : a:000[1:] }
-    \)
+fun! s:OpenCabalProject(method, ...)
+  echo haskellcomplete#EvalScion(1,a:method
+    \  ,{'root-dir' : getcwd()
+    \   ,'dist-dir' : a:1
+    \   ,'extra-args' : a:000[1:] }
+    \ )
 endf
 
 fun! s:LoadComponentCompletion(A,L,P)
   let beforeC= a:L[:a:P-1]
   let word = matchstr(beforeC, '\zs\S*$')
 
-  let list = haskellcomplete#EvalScion({'request' : 'cmdListCabalTargets'})
-  return filter(list, 'v:val =~ '.string('^'.word))
+  let result = []
+  for item in haskellcomplete#EvalScion(1,'list-cabal-components',{'cabal-file': haskellcomplete#CabalFile()})
+    if has_key(item, 'library')
+      call add(result, 'library') " there can only be one
+    elseif has_key(item, 'executable')
+      call add(result, 'executable:'. item['executable'])
+    else
+      " component type File will never be returned ?
+      throw "unexpected item ".string(item)
+    endif
+  endfor
+  return result
 endf
 
+
+" intentionally suffixing commands by "Scion"
+" This way you have less typing. You can still get a list of Scion commands by
+" :*Scion<c-d>
+
 " ===== you don't need any project for these:  =============
-command! -buffer ConnectionInfo
-  \ echo haskellcomplete#EvalScion({'request' : 'cmdConnectionInfo'})
+command! -buffer ConnectionInfoScion
+  \ echo haskellcomplete#EvalScion(1,'connection-info',{})
 
 " list supported languages
-command! -buffer ListSupportedLanguages
-  \ echo haskellcomplete#EvalScion({'request' : 'cmdListSupportedLanguages'})
+" TODO
+command! -buffer ListSupportedLanguagesScion
+  \ echo haskellcomplete#EvalScion(1,{'method' : 'cmdListSupportedLanguages'})
 
 " list supported pragmas
-command! -buffer ListSupportedPragmas
-  \ echo haskellcomplete#EvalScion({'request' : 'cmdListSupportedPragmas'})
+" TODO
+command! -buffer ListSupportedPragmasScion
+  \ echo haskellcomplete#EvalScion(1,{'method' : 'cmdListSupportedPragmas'})
 
 " list supported flags
-command! -buffer ListSupportedFlags
-  \ echo haskellcomplete#EvalScion({'request' : 'cmdListSupportedFlags'})
+" TODO
+command! -buffer ListSupportedFlagsScion
+  \ echo haskellcomplete#EvalScion(1,{'method' : 'cmdListSupportedFlags'})
 
 " ===== loading a cabal project: ============================
 
 " assuming pwd is current cabal directory containing the .cabal file 
 " optional argument specifies the cabal build (dist) directory
-command! -buffer -nargs=* -complete=file OpenCabalProject
-  \ call s:OpenCabalProject(<f-args>)
+command! -buffer -nargs=* -complete=file OpenCabalProjectScion
+  \ call s:OpenCabalProject('open-cabal-project',<f-args>)
+command! -buffer -nargs=* -complete=file ConfigureCabalProjectScion
+  \ call s:OpenCabalProject('configure-cabal-project', <f-args>)
 
 " arg either "library" or "executable:name"
+" TODO
 command! -buffer -nargs=1 -complete=customlist,s:LoadComponentCompletion
-  \ LoadComponent
-  \ echo ScionResultToErrorList('load component finished: ','setqflist',haskellcomplete#EvalScion({'request' : 'cmdLoadComponent', 'component' : <q-args>}))
+  \ LoadComponentScion
+  \ echo haskellcomplete#LoadComponent(haskellcomplete#compToV(<f-args>))
+  " \ echo ScionResultToErrorList('load component finished: ','setqflist',haskellcomplete#EvalScion(1,'load-component', { 'component' : haskellcomplete#compToV(<f-args>)}))
 
 " list exposed 
-command! -buffer ListExposedModules
-  \ echo haskellcomplete#EvalScion({'request' : 'cmdListExposedModules'})
-command! -buffer -nargs=* -complete=file BackgroundTypecheckFile
+" TODO
+command! -buffer ListExposedModulesScion
+  \ echo haskellcomplete#EvalScion(1, {'method' : 'cmdListExposedModules'})
+" TODO
+command! -buffer -nargs=* -complete=file BackgroundTypecheckFileScion
   \ call s:BackgroundTypecheckFile(<f-args>)
-command! -buffer ThingAtPoint
-  \ echo haskellcomplete#EvalScion({'request' : 'cmdThingAtPoint', 'file' : expand('%:p'), 'line' : line('.').'', 'col' : col('.').''})
-command! -buffer ThingAtPointExportedByHack
+" TODO
+command! -buffer ThingAtPointScion
+  \ echo haskellcomplete#EvalScion(1,{'method' : 'cmdThingAtPoint', 'file' : expand('%:p'), 'line' : line('.').'', 'col' : col('.').''})
+" TODO
+command! -buffer ThingAtPointExportedByHackScion
   \ echo filter(
-      \ split(haskellcomplete#EvalScion({'request' : 'cmdThingAtPointMoreInfo'
+      \ split(haskellcomplete#EvalScion(1,{'method' : 'cmdThingAtPointMoreInfo'
         \, 'file' : expand('%:p')
         \, 'line' : line('.').'', 'col' : col('.').''})['Just'],"\n")
       \ , 'v:val =~ '.string(expand('<cword>').' ='))[0]
 
-command! -buffer ListRdrNamesInScope
-  \ echo haskellcomplete#EvalScion({'request' : 'cmdListRdrNamesInScope'})
+" TODO
+command! -buffer ListRdrNamesInScopeScion
+  \ echo haskellcomplete#EvalScion(1,{'method' : 'cmdListRdrNamesInScope'})
 
-command! -buffer ListCabalTargets
-  \ echo haskellcomplete#EvalScion({'request' : 'cmdListCabalTargets'})
+" TODO
+command! -buffer ListCabalTargetsScion
+  \ echo haskellcomplete#EvalScion(1,{'method' : 'cmdListCabalTargets'})

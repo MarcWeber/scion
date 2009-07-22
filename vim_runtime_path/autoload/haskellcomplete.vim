@@ -2,7 +2,7 @@
 " -> haskellcomplete#EvalScion )
 "
 " This implementation requires has('python') support
-"
+
 " You can look up some use cases in the ftplugin file.
 "
 " This code is based on the initial implementation found in shim by Benedikt Schmidt
@@ -10,7 +10,7 @@
 
 if exists('g:tovl')
   fun! s:Log(level, msg)
-    call tovl#log#Log("haskellcomplete",a:level, a:msg)
+    call tovl#log#Log("haskellcomplete",a:level, type(a:msg) == type("") ? a:msg : string(a:msg))
   endf
 else
   fun! s:Log(level, msg)
@@ -23,8 +23,64 @@ if !has('python') | call s:Log(0, "Error: scion requires vim compiled with +pyth
 
 let g:vim_scion_protocol_version = "0"
 
+fun! haskellcomplete#LoadComponent(component)
+  let result = haskellcomplete#EvalScion(1,'load-component', { 'component' : a:component})
+  if has_key(result,'error')
+    if result['error']['message'] == "NoCurrentCabalProject"
+      let cabal_project = haskellcomplete#CabalProject()
+
+    else
+      throw "can't handle this failure: ".string(result['error'])
+    endif
+  endif
+endf
+
+" if there is item take it, if there are more than one ask user which one to
+" use.. -- don't think cabal allows multiple .cabal files.. At least the user
+" is notified that there are more than one .cabal files
+fun! haskellcomplete#ChooseFromList(list)
+    if empty(a:list)
+      return
+    elseif len(a:list) == 1
+      return a:list[0]
+    else
+      let l = []
+      let i = 1
+      for line in a:list
+        call add(l, i.': '.line)
+        let i = i + 1
+      endfor
+      return a:list[inputlist(l)-1]
+    endif
+endf
+
+fun! haskellcomplete#CabalFile()
+  if !exists('g:cabal_file')
+    let list = split(glob('*.cabal'),"\n")
+    if empty(list)
+      throw "no cabal file found"
+    endif
+    let g:cabal_file = getcwd().'/'.haskellcomplete#ChooseFromList(list)
+  endif
+  return g:cabal_file
+endf
+
+fun! haskellcomplete#CabalProject()
+  return { 'cabal_file' : haskellcomplete#CabalFile(), 'dist_dir' : distdir }
+endf
+
+fun! haskellcomplete#compToV(component)
+  let m = matchstr(a:component, '^executable:\(.*\)')
+  if m != '' | return {'executable' : m} | endif
+  let m = matchstr(a:component, '^library$')
+  if m != '' | return {'library' : json#NULL()} | endif
+  let m = matchstr(a:component, '^file:\(.*\)')
+  if m != '' | return {'file' : m} | endif
+  throw "invalid component".a:component
+endfun
+
 " use this to connect to a socket
-" py scionConnectionSetting = "/tmp/scion-io"
+" connection settings: see strings in connectscion
 
 " returns string part before and after cursor
 function! haskellcomplete#BcAc()
@@ -57,20 +113,36 @@ fun! haskellcomplete#CompletModule(findstart, base)
   endif
 endf
 
-" example: echo haskellcomplete#EvalScion({'request' : 'cmdConnectionInfo', 'file' : 'test.hs'})
-function! haskellcomplete#EvalScion(request)
+let g:scion_request_id = 1
+
+" name: method name
+" params: params to method
+" optional argument: continuation function (not yet implemented)
+" returns: nothing when continuation function is given
+"          reply else
+function! haskellcomplete#EvalScion(fail_on_error, method, params, ...)
+  if a:0 > 0
+    let continuation a:0
+  endif
+  let g:scion_request_id = g:scion_request_id + 1
+  let request = { 'method' : a:method, 'params' : a:params, 'id' : g:scion_request_id }
   " the first string converts the vim object into a string, the second
   " converts this string into a python string
-  let g:scion_arg = string(a:request)
+  let g:scion_arg = json#encode(request)
   py evalscionAssign(vim.eval('g:scion_arg'))
   " warnings
   for w in get(g:scion_result, 'warnings', [])
     call s:Log(1, w) | echo w
   endfor
   " errors
+
+  if !a:fail_on_error
+    return g:scion_result
+  endif
+
   if has_key(g:scion_result,'error')
     call s:Log(0, g:scion_result['error'])
-    throw "There was a scion server error :".g:scion_result['error']
+    throw "There was a scion server error :".string(g:scion_result['error'])
   else
     return g:scion_result['result']
   endif
@@ -111,11 +183,14 @@ class ScionServerConnectionStdinOut(ScionServerConnection):
 class ScionServerConnectionSocket(ScionServerConnection):
   """connects to the scion server by either TCP/IP or socketfile"""
   def __init__(self, connection):
-    # connection either (host, port) or (socketfile)
-    if type(connection) == type((0,0)):
-      # tuple -> host, port
+    if type(connection) == type([]):
+      # array [ host, port ]
+      # vim.eval always returns strings!
+      connection = (connection[0], string.atoi(connection[1]))
+      print "connection is now %s" % connection.__str__()
       su = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     else: # must be path -> file socket
+      print "else "
       su = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     su.settimeout(10)
     su.connect(connection)
@@ -132,6 +207,8 @@ def connectscion():
     global told_user_about_missing_configuration
     if 0 == told_user_about_missing_configuration:
       try:
+        # use connection form vim value so that python is used as lazily as possible
+        scionConnectionSetting = vim.eval('g:scionConnectionSetting')
         print "connecting to scion %s"%scionConnectionSetting.__str__()
       except NameError:
         vim.command("sp")
@@ -139,21 +216,15 @@ def connectscion():
         b.append( "you haven't defined scionConnectionSetting")
         b.append( "Do so by adding one of the following lines to your .vimrc:")
         b.append( "TCP/IP, socket, stdio")
-        b.append( "py scionConnectionSetting = ('socket', \"socket file location\") # socket connection")
-        b.append( "py scionConnectionSetting = ('socket', ('localhost', 4005)) # host, port TCIP/IP connection")
-        b.append( "py scionConnectionSetting = ('scion', \"scion_server location\") # stdio connection ")
+        b.append( "let g:scionConnectionSetting = ['socket', \"socket file location\"] # socket connection")
+        b.append( "let g:scionConnectionSetting = ['socket', ['localhost', 4005]] # host, port TCIP/IP connection")
+        b.append( "let g:scionConnectionSetting = ['scion', \"scion_server location\"] # stdio connection ")
         told_user_about_missing_configuration = 1
 
     if scionConnectionSetting[0] == "socket":
       server_connection = ScionServerConnectionSocket(scionConnectionSetting[1])
     else:
-        server_connection = ScionServerConnectionStdinOut(scionConnectionSetting[1])
-
-    # handshake
-    server_connection.send("select scion-server protocol:vim %s" % vim.eval('g:vim_scion_protocol_version'))
-    res = server_connection.receive()
-    if res != "ok":
-      raise Exception("failed connecting to scion Reason: `%s'" % res)
+      server_connection = ScionServerConnectionStdinOut(scionConnectionSetting[1])
 
 # sends a command and returns the returned line
 def evalscion(str):
