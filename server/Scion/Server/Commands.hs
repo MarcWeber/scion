@@ -307,7 +307,7 @@ instance JSON Component where
         return $ File (fromJSString s)
   readJSON _ = fail "component"
 
-  showJSON Library = makeObject [("library", JSNull)]
+  showJSON Library = makeObject [("library", JSString (toJSString ""))]
   showJSON (Executable n) =
       makeObject [("executable", JSString (toJSString n))]
   showJSON (File n) =
