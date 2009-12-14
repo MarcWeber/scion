@@ -138,21 +138,21 @@ writeSampleConfig :: FilePath -> IO ()
 writeSampleConfig file = do
   h <- openFile file AppendMode
   hPutStrLn h $ "\n" ++ unlines [
-             "// this is a demo scion project configuration file has been created for you"
-            ,"// you can use it to write down a set of configurations you'd like to test"
+             "// A demo scion project configuration file has been created for you."
+            ,"// You can use it to write down a set of configurations you'd like to test"
             ,"//"
-            ,"// make scion select the default scion entry"
+            ,"// make scion select the default scion entry:"
             ,"{\"scion-default-cabal-config\":\"dist-scion\"}"
             ,"// default scion entry:"
             ,"{\"type\":\"build-configuration\", \"dist-dir\":\"dist-scion\", \"extra-args\": [], \"scion-default\": 1}"
             ,"//"
-            ,"// some examples:"
-            ,"{\"type\":\"build-configuration\", \"dist-dir\":\"dist-demo-simple-tools-from-path-default\", \"extra-args\": []}"
-            ,"{\"type\":\"build-configuration\", \"dist-dir\":\"dist-demo-1\", \"extra-args\": [\"--with-hc-pkg=PATH\", \"--with-compiler=path-to-ghc\"]}"
-            ,"{\"type\":\"build-configuration\", \"dist-dir\":\"dist-demo-2\", \"extra-args\": [\"--flags=BuildTestXHTML BuildTestSimple\", \"--disable-library-profiling\"]}"
-            ,"//"
-            ,"{\"type\":\"component-file\", \"file\": \"test-application.hs\", \"flags\":[\"-package\", \"parsec\"]}"
-            ,"{\"type\":\"component-file\", \"file\": \"test-application.hs\", \"flags\":[]}"
+            ,"// === advanced examples: =="
+            ,"// {\"type\":\"build-configuration\", \"dist-dir\":\"dist-demo-simple-tools-from-path-default\", \"extra-args\": []}"
+            ,"// {\"type\":\"build-configuration\", \"dist-dir\":\"dist-demo-1\", \"extra-args\": [\"--with-hc-pkg=PATH\", \"--with-compiler=path-to-ghc\"]}"
+            ,"// {\"type\":\"build-configuration\", \"dist-dir\":\"dist-demo-2\", \"extra-args\": [\"--flags=BuildTestXHTML BuildTestSimple\", \"--disable-library-profiling\"]}"
+            ,"// //"
+            ,"// {\"type\":\"component-file\", \"file\": \"test-application.hs\", \"flags\":[\"-package\", \"parsec\"]}"
+            ,"// {\"type\":\"component-file\", \"file\": \"test-application.hs\", \"flags\":[]}"
           ]
   hClose h
 
