@@ -30,6 +30,8 @@ import qualified Data.Text as T
 
 import qualified Data.Text as T
 
+type IsNewSession = Bool
+
 -- Extend this to support new commands
 data ServerCommand
   = ConnectionInfo

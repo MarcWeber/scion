@@ -201,8 +201,6 @@ data Request
   deriving Show
 
 
-type IsNewSession = Bool
-
 data Response
   = Ok ServerResponse
   | Error String

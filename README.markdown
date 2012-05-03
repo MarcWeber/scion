@@ -13,6 +13,9 @@ API and a server for non-Haskell clients such as Emacs and Vim.
 Installation
 ============
 
+tested with:
+haskellPackages_ghc703 ?
+
 (For developer builds see section "Hacking" below.)
 
 Scion requires [GHC 6.10.1][ghc] or later.  All other dependencies

@@ -8,6 +8,7 @@ import ServerTypes
 import Data.DeriveTH
 import Scion.Types.Session hiding ( catch )
 import qualified Data.Text as T
+import System.FilePath.Canonical
 
 -- all those lines implement JSON encoding for both main types:
 -- ServerCommand and ServerResponse
@@ -94,6 +95,11 @@ lookupKey = flip valFromObj
 
 makeObject :: [(String, JSValue)] -> JSValue
 makeObject = makeObj
+
+-- can't derive automatically because constructor is hidden
+instance JSON CanonicalFilePath where
+  readJSON _ = error "not implemented" -- no need to do this, we only send it
+  showJSON   = JSString . toJSString . show
 
 $(derive makeJSON ''HsFileType)
 $(derive makeJSON ''ModuleSummary)
